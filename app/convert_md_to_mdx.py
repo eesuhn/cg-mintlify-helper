@@ -17,50 +17,77 @@ from ._constants import (
 
 def extract_tips_and_notes(content):
     """
-    Extract Tips and Notes sections from markdown content.
+    Extract Tips, Notes, and Notice sections from markdown content.
     """
-    pattern = (
-        r"(>\s*[👍📘🚧]\s*\*\*(?:Tips|Notes|Notice)\*\*\s*\n(?:>\s*\n)?(?:>\s*.*\n?)*)"
-    )
+    patterns = [
+        # Capture Tips section
+        r"(>\s*👍\s*Tips.*?)(?=\n\n>\s*[📘🚧]|\n\n[^>]|\Z)",
+        # Capture Notes section
+        r"(>\s*📘\s*Notes.*?)(?=\n\n>\s*[👍🚧]|\n\n[^>]|\Z)",
+        # Capture Notice section
+        r"(>\s*🚧\s*Notice.*?)(?=\n\n>\s*[👍📘]|\n\n[^>]|\Z)",
+    ]
 
-    matches = re.findall(pattern, content, flags=re.MULTILINE)
+    all_matches = []
 
-    if not matches:
+    for pattern in patterns:
+        matches = re.findall(pattern, content, flags=re.MULTILINE | re.DOTALL)
+        if matches:
+            all_matches.extend(matches)
+
+    if not all_matches:
         return ""
 
-    return "\n\n".join(matches)
+    unique_matches = []
+    for match in all_matches:
+        if match not in unique_matches:
+            unique_matches.append(match)
+
+    return "\n\n".join(unique_matches)
 
 
 def convert_blockquote_to_component(content):
     """
-    Convert blockquote-style Tips and Notes to Mintlify MDX components.
+    Convert blockquote-style Tips, Notes, and Notice to Mintlify MDX components.
     """
 
     def process_blockquote_match(match):
         """Process a single blockquote match and convert it to MDX component."""
         full_match = match.group(0)
 
-        icon_line = match.group(1)
-        if "👍" in icon_line or "Tips" in icon_line:
+        # Check the content for section type
+        if "👍" in full_match or "Tips" in full_match:
             component_type = "Tip"
             title = "Tips"
-        elif "📘" in icon_line or "Notes" in icon_line:
+        elif "📘" in full_match or "Notes" in full_match:
             component_type = "Note"
             title = "Note"
-        elif "🚧" in icon_line or "Notice" in icon_line:
+        elif "🚧" in full_match or "Notice" in full_match or "Warning" in full_match:
             component_type = "Warning"
             title = "Notice"
         else:
-            return full_match
+            component_type = "Note"
+            title = "Note"
 
-        content_part = match.group(2).strip()
-
-        lines = content_part.split("\n")
+        # Process the entire content, removing blockquote markers
+        lines = full_match.split("\n")
         cleaned_lines = []
 
+        # Skip the header line (first line with emoji and title)
+        content_started = False
+
         for line in lines:
-            # Remove leading > and minimal whitespace, but preserve indentation structure
+            # Remove leading > and minimal whitespace
             cleaned_line = re.sub(r"^>\s?", "", line)
+
+            # Skip empty header lines and the title line
+            if not content_started:
+                if cleaned_line.strip() == "" or any(
+                    keyword in cleaned_line
+                    for keyword in ["👍 Tips", "📘 Notes", "🚧 Notice", "🚧 Warning"]
+                ):
+                    continue
+                content_started = True
 
             # Convert * to - for consistency, preserving indentation
             cleaned_line = re.sub(r"^(\s*)\*\s+", r"\1- ", cleaned_line)
@@ -83,11 +110,22 @@ def convert_blockquote_to_component(content):
 
         return mdx_component
 
-    pattern = r"(>\s*[👍📘🚧]\s*\*\*(?:Tips|Notes|Notice)\*\*\s*\n(?:>\s*\n)?)((?:>\s*.*\n?)*)"
+    # Simple pattern to match each complete section
+    patterns = [
+        r"(>\s*👍\s*Tips.*?)(?=\n\n>\s*[📘🚧]|\n\n[^>]|\Z)",
+        r"(>\s*📘\s*Notes.*?)(?=\n\n>\s*[👍🚧]|\n\n[^>]|\Z)",
+        r"(>\s*🚧\s*(?:Notice|Warning).*?)(?=\n\n>\s*[👍📘]|\n\n[^>]|\Z)",
+    ]
 
-    converted_content = re.sub(
-        pattern, process_blockquote_match, content, flags=re.MULTILINE
-    )
+    converted_content = content
+
+    for pattern in patterns:
+        converted_content = re.sub(
+            pattern,
+            process_blockquote_match,
+            converted_content,
+            flags=re.MULTILINE | re.DOTALL,
+        )
 
     return converted_content
 
@@ -220,8 +258,8 @@ def process_operation_id(
         mdx_content = convert_md_to_mdx(md_content, openapi_metadata)
 
         if not mdx_content.strip():
-            justsdk.print_warning(
-                f"No Tips or Notes found in '{operation_id}.md', skipping..."
+            justsdk.print_debug(
+                f"No Tips, Notes, or Notice sections found in '{operation_id}.md', skipping..."
             )
             return True  # Not an error, just no content to convert
 
