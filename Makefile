@@ -36,5 +36,14 @@ test:
 run:
 	@uv run -m main $(filter-out $@,$(MAKECMDGOALS))
 
+add-mint:
+	@uv run -m main add-mint
+
+mdx-demo:
+	@uv run -m main convert-mdx --api-mode demo
+
+mdx-pro:
+	@uv run -m main convert-mdx --api-mode pro
+
 .PHONY: all venv upgrade format check check-fix clean test \
-		run
+		run add-mint mdx-demo mdx-pro

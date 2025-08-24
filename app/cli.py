@@ -2,7 +2,6 @@ import argparse
 import sys
 import justsdk
 
-
 from pathlib import Path
 from .add_mint import (
     process_reference_files as add_mint_process_files,
@@ -11,8 +10,17 @@ from .add_mint import (
 from .convert_md_to_mdx import (
     process_reference_files as convert_md_process_files,
     process_file as convert_md_process_file,
+    process_demo_files,
+    process_pro_files,
+    process_mode_files,
 )
-from ._constants import DEFAULT_REFERENCE_DIR, JSON_EXTENSION
+from ._constants import (
+    DEFAULT_REFERENCE_DIR,
+    JSON_EXTENSION,
+    DEMO_MODE,
+    PRO_MODE,
+    VALID_MODES,
+)
 
 
 def create_parser():
@@ -47,6 +55,12 @@ def create_parser():
     )
 
     parser.add_argument(
+        "--api-mode",
+        choices=VALID_MODES,
+        help=f"API mode to process: {', '.join(VALID_MODES)} (only for convert-mdx mode)",
+    )
+
+    parser.add_argument(
         "--verbose", "-v", action="store_true", help="Enable verbose output"
     )
 
@@ -64,7 +78,13 @@ def main():
     elif args.mode == "convert-mdx":
         justsdk.print_info("Starting OpenAPI markdown to MDX converter...")
         process_file_func = convert_md_process_file
-        process_files_func = convert_md_process_files
+
+        if args.api_mode == DEMO_MODE:
+            process_files_func = process_demo_files
+        elif args.api_mode == PRO_MODE:
+            process_files_func = process_pro_files
+        else:
+            process_files_func = convert_md_process_files
     else:
         justsdk.print_error(f"Unknown mode: {args.mode}")
         sys.exit(1)
@@ -92,7 +112,12 @@ def main():
                 justsdk.print_error(f"Failed to process '{file_path.name}'.")
                 sys.exit(1)
         else:
-            if args.mode == "convert-mdx" and args.output:
+            if args.mode == "convert-mdx" and args.api_mode:
+                if args.output:
+                    success = process_mode_files(args.api_mode, args.dir, args.output)
+                else:
+                    success = process_mode_files(args.api_mode, args.dir)
+            elif args.mode == "convert-mdx" and args.output:
                 success = process_files_func(args.dir, args.output)
             else:
                 success = process_files_func(args.dir)

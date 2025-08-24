@@ -8,6 +8,10 @@ from ._constants import (
     DEFAULT_REFERENCE_DIR,
     COINGECKO_DOCS_BASE_URL,
     REQUEST_TIMEOUT,
+    DEMO_MODE,
+    PRO_MODE,
+    VALID_MODES,
+    DEFAULT_MDX_DIR,
 )
 
 
@@ -15,7 +19,9 @@ def extract_tips_and_notes(content):
     """
     Extract Tips and Notes sections from markdown content.
     """
-    pattern = r"(>\s*[👍📘]\s*\*\*(?:Tips|Notes)\*\*\s*\n(?:>\s*\n)?(?:>\s*.*\n?)*)"
+    pattern = (
+        r"(>\s*[👍📘🚧]\s*\*\*(?:Tips|Notes|Notice)\*\*\s*\n(?:>\s*\n)?(?:>\s*.*\n?)*)"
+    )
 
     matches = re.findall(pattern, content, flags=re.MULTILINE)
 
@@ -41,6 +47,9 @@ def convert_blockquote_to_component(content):
         elif "📘" in icon_line or "Notes" in icon_line:
             component_type = "Note"
             title = "Note"
+        elif "🚧" in icon_line or "Notice" in icon_line:
+            component_type = "Warning"
+            title = "Notice"
         else:
             return full_match
 
@@ -50,14 +59,16 @@ def convert_blockquote_to_component(content):
         cleaned_lines = []
 
         for line in lines:
-            # Remove leading > and whitespace
-            cleaned_line = re.sub(r"^>\s*", "", line)
+            # Remove leading > and minimal whitespace, but preserve indentation structure
+            cleaned_line = re.sub(r"^>\s?", "", line)
 
-            # Convert * to - for consistency
-            cleaned_line = re.sub(r"^\s*\*\s+", "- ", cleaned_line)
+            # Convert * to - for consistency, preserving indentation
+            cleaned_line = re.sub(r"^(\s*)\*\s+", r"\1- ", cleaned_line)
 
-            # Handle nested bullets (convert double spaces + * to double spaces + -)
-            cleaned_line = re.sub(r"^(\s+)\*\s+", r"\1- ", cleaned_line)
+            cleaned_line = cleaned_line.replace("‘", "'")
+            cleaned_line = cleaned_line.replace("’", "'")
+            cleaned_line = cleaned_line.replace("“", '"')
+            cleaned_line = cleaned_line.replace("”", '"')
 
             # Remove extra escaping from quotes in URLs/text
             cleaned_line = cleaned_line.replace('`"', '"').replace('"`', '"')
@@ -72,7 +83,7 @@ def convert_blockquote_to_component(content):
 
         return mdx_component
 
-    pattern = r"(>\s*[👍📘]\s*\*\*(?:Tips|Notes)\*\*\s*\n(?:>\s*\n)?)((?:>\s*.*\n?)*)"
+    pattern = r"(>\s*[👍📘🚧]\s*\*\*(?:Tips|Notes|Notice)\*\*\s*\n(?:>\s*\n)?)((?:>\s*.*\n?)*)"
 
     converted_content = re.sub(
         pattern, process_blockquote_match, content, flags=re.MULTILINE
@@ -212,6 +223,73 @@ def process_file(json_file, output_dir=None):
     except Exception as e:
         justsdk.print_error(f"Error processing '{json_file.name}': {e}")
         return False
+
+
+def process_mode_files(mode, reference_dir=None, output_dir=None):
+    """
+    Process OpenAPI JSON files for a specific mode (pro or demo).
+    """
+    if mode not in VALID_MODES:
+        justsdk.print_error(
+            f"Error: Invalid mode '{mode}'. Valid modes are: {', '.join(VALID_MODES)}"
+        )
+        return False
+
+    if reference_dir is None:
+        reference_dir = Path(DEFAULT_REFERENCE_DIR)
+    else:
+        reference_dir = Path(reference_dir)
+
+    if output_dir is None:
+        output_dir = Path(DEFAULT_MDX_DIR)
+    else:
+        output_dir = Path(output_dir)
+
+    mode_reference_dir = reference_dir / mode
+    mode_output_dir = output_dir / mode
+
+    if not mode_reference_dir.exists():
+        justsdk.print_error(
+            f"Error: Mode directory '{mode_reference_dir}' does not exist."
+        )
+        return False
+
+    mode_output_dir.mkdir(parents=True, exist_ok=True)
+
+    json_files = list(mode_reference_dir.glob("*.json"))
+
+    if not json_files:
+        justsdk.print_warning(f"No JSON files found in the {mode} directory.")
+        return True
+
+    justsdk.print_info(f"Processing {mode} mode with {len(json_files)} JSON file(s):")
+    for file in json_files:
+        print(f"  - {file.name}")
+
+    success_count = 0
+
+    for json_file in json_files:
+        if process_file(json_file, mode_output_dir):
+            success_count += 1
+
+    justsdk.print_info(
+        f"\nCompleted processing {success_count}/{len(json_files)} {mode} files successfully!"
+    )
+    return success_count == len(json_files)
+
+
+def process_demo_files(reference_dir=None, output_dir=None):
+    """
+    Process demo OpenAPI JSON files to generate MDX files.
+    """
+    return process_mode_files(DEMO_MODE, reference_dir, output_dir)
+
+
+def process_pro_files(reference_dir=None, output_dir=None):
+    """
+    Process pro OpenAPI JSON files to generate MDX files.
+    """
+    return process_mode_files(PRO_MODE, reference_dir, output_dir)
 
 
 def process_reference_files(reference_dir=None, output_dir=None):
