@@ -1,6 +1,3 @@
-"""Constants for the OpenAPI x-mint processor."""
-
-# HTTP methods that can contain operations
 HTTP_METHODS = [
     "get",
     "post",
@@ -12,8 +9,12 @@ HTTP_METHODS = [
     "trace",
 ]
 
-# Default reference directory
 DEFAULT_REFERENCE_DIR = "reference"
 
-# File extensions
 JSON_EXTENSION = ".json"
+MDX_EXTENSION = ".mdx"
+MD_EXTENSION = ".md"
+
+COINGECKO_DOCS_BASE_URL = "https://docs.coingecko.com/reference"
+
+REQUEST_TIMEOUT = 30

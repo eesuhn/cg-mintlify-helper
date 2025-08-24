@@ -1,0 +1,256 @@
+import re
+import requests
+import justsdk
+
+from pathlib import Path
+from ._constants import (
+    HTTP_METHODS,
+    DEFAULT_REFERENCE_DIR,
+    COINGECKO_DOCS_BASE_URL,
+    REQUEST_TIMEOUT,
+)
+
+
+def extract_tips_and_notes(content):
+    """
+    Extract Tips and Notes sections from markdown content.
+    """
+    pattern = r"(>\s*[👍📘]\s*\*\*(?:Tips|Notes)\*\*\s*\n(?:>\s*\n)?(?:>\s*.*\n?)*)"
+
+    matches = re.findall(pattern, content, flags=re.MULTILINE)
+
+    if not matches:
+        return ""
+
+    return "\n\n".join(matches)
+
+
+def convert_blockquote_to_component(content):
+    """
+    Convert blockquote-style Tips and Notes to Mintlify MDX components.
+    """
+
+    def process_blockquote_match(match):
+        """Process a single blockquote match and convert it to MDX component."""
+        full_match = match.group(0)
+
+        icon_line = match.group(1)
+        if "👍" in icon_line or "Tips" in icon_line:
+            component_type = "Tip"
+            title = "Tips"
+        elif "📘" in icon_line or "Notes" in icon_line:
+            component_type = "Note"
+            title = "Note"
+        else:
+            return full_match
+
+        content_part = match.group(2).strip()
+
+        lines = content_part.split("\n")
+        cleaned_lines = []
+
+        for line in lines:
+            # Remove leading > and whitespace
+            cleaned_line = re.sub(r"^>\s*", "", line)
+
+            # Convert * to - for consistency
+            cleaned_line = re.sub(r"^\s*\*\s+", "- ", cleaned_line)
+
+            # Handle nested bullets (convert double spaces + * to double spaces + -)
+            cleaned_line = re.sub(r"^(\s+)\*\s+", r"\1- ", cleaned_line)
+
+            # Remove extra escaping from quotes in URLs/text
+            cleaned_line = cleaned_line.replace('`"', '"').replace('"`', '"')
+
+            cleaned_lines.append(cleaned_line)
+
+        component_content = "\n".join(cleaned_lines).strip()
+
+        mdx_component = (
+            f"<{component_type}>\n### {title}\n{component_content}\n</{component_type}>"
+        )
+
+        return mdx_component
+
+    pattern = r"(>\s*[👍📘]\s*\*\*(?:Tips|Notes)\*\*\s*\n(?:>\s*\n)?)((?:>\s*.*\n?)*)"
+
+    converted_content = re.sub(
+        pattern, process_blockquote_match, content, flags=re.MULTILINE
+    )
+
+    return converted_content
+
+
+def convert_reference_links(content):
+    """
+    Convert relative reference links to full CoinGecko documentation URLs.
+    """
+    pattern = r"\[`([^`]+)`\]\(/reference/([^)]+)\)"
+
+    def replace_link(match):
+        endpoint = match.group(1)
+        reference_id = match.group(2)
+        return f"[`{endpoint}`](<https://docs.coingecko.com/reference/{reference_id}>)"
+
+    converted_content = re.sub(pattern, replace_link, content)
+
+    return converted_content
+
+
+def convert_md_to_mdx(content):
+    """
+    Convert markdown content to MDX format.
+    """
+    extracted_content = extract_tips_and_notes(content)
+
+    if not extracted_content:
+        return ""
+
+    converted_content = convert_blockquote_to_component(extracted_content)
+    converted_content = convert_reference_links(converted_content)
+
+    return converted_content
+
+
+def fetch_markdown_content(operation_id):
+    """
+    Fetch markdown content from CoinGecko docs for a given operation ID.
+    """
+    url = f"{COINGECKO_DOCS_BASE_URL}/{operation_id}.md"
+
+    try:
+        response = requests.get(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+
+        justsdk.print_success(f"Fetched markdown content for '{operation_id}'")
+        return response.text
+
+    except requests.exceptions.RequestException as e:
+        justsdk.print_error(f"Failed to fetch '{operation_id}.md': {e}")
+        return None
+
+
+def extract_operation_ids(openapi_data):
+    """
+    Extract all operation IDs from OpenAPI specification.
+    """
+    operation_ids = []
+
+    if "paths" not in openapi_data:
+        justsdk.print_warning("No 'paths' found in the OpenAPI specification")
+        return operation_ids
+
+    for path, path_item in openapi_data["paths"].items():
+        for method in HTTP_METHODS:
+            if method in path_item:
+                operation = path_item[method]
+                if "operationId" in operation:
+                    operation_ids.append(operation["operationId"])
+
+    return operation_ids
+
+
+def process_operation_id(operation_id, output_dir):
+    """
+    Process a single operation ID: fetch markdown and convert to MDX.
+    """
+    try:
+        md_content = fetch_markdown_content(operation_id)
+
+        if md_content is None:
+            return False
+
+        mdx_content = convert_md_to_mdx(md_content)
+
+        if not mdx_content.strip():
+            justsdk.print_warning(
+                f"No Tips or Notes found in '{operation_id}.md', skipping..."
+            )
+            return True  # Not an error, just no content to convert
+
+        mdx_file_path = output_dir / f"{operation_id}.mdx"
+        justsdk.write_file(mdx_content, mdx_file_path, atomic=True)
+        justsdk.print_success(f"Created '{operation_id}.mdx'")
+        return True
+
+    except Exception as e:
+        justsdk.print_error(f"Error processing operation '{operation_id}': {e}")
+        return False
+
+
+def process_file(json_file, output_dir=None):
+    """
+    Process a single OpenAPI JSON file to generate MDX files.
+    """
+    try:
+        justsdk.print_info(f"Processing '{json_file.name}'...")
+
+        openapi_data = justsdk.read_file(json_file, use_orjson=True)
+        operation_ids = extract_operation_ids(openapi_data)
+
+        if not operation_ids:
+            justsdk.print_warning(f"No operation IDs found in '{json_file.name}'")
+            return True
+
+        if output_dir is None:
+            output_dir = json_file.parent
+
+        output_dir.mkdir(parents=True, exist_ok=True)
+        justsdk.print_info(f"Found {len(operation_ids)} operation IDs to process")
+
+        success_count = 0
+
+        for operation_id in operation_ids:
+            if process_operation_id(operation_id, output_dir):
+                success_count += 1
+
+        justsdk.print_info(
+            f"Successfully processed {success_count}/{len(operation_ids)} operations from '{json_file.name}'"
+        )
+        return success_count == len(operation_ids)
+
+    except Exception as e:
+        justsdk.print_error(f"Error processing '{json_file.name}': {e}")
+        return False
+
+
+def process_reference_files(reference_dir=None, output_dir=None):
+    """
+    Process all OpenAPI JSON files in the reference folder to generate MDX files.
+    """
+    if reference_dir is None:
+        reference_dir = Path(DEFAULT_REFERENCE_DIR)
+    else:
+        reference_dir = Path(reference_dir)
+
+    if output_dir is None:
+        output_dir = reference_dir
+    else:
+        output_dir = Path(output_dir)
+
+    if not reference_dir.exists():
+        justsdk.print_error(
+            f"Error: Reference directory '{reference_dir}' does not exist."
+        )
+        return False
+
+    json_files = list(reference_dir.glob("*.json"))
+
+    if not json_files:
+        justsdk.print_warning("No JSON files found in the reference directory.")
+        return True
+
+    justsdk.print_info(f"Found {len(json_files)} JSON file(s) to process:")
+    for file in json_files:
+        print(f"  - {file.name}")
+
+    success_count = 0
+
+    for json_file in json_files:
+        if process_file(json_file, output_dir):
+            success_count += 1
+
+    justsdk.print_info(
+        f"\nCompleted processing {success_count}/{len(json_files)} files successfully!"
+    )
+    return success_count == len(json_files)

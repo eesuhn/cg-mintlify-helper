@@ -34,7 +34,7 @@ test:
 	@uv run pytest $(filter-out $@,$(MAKECMDGOALS))
 
 run:
-	@uv run -m main
+	@uv run -m main $(filter-out $@,$(MAKECMDGOALS))
 
 .PHONY: all venv upgrade format check check-fix clean test \
 		run
