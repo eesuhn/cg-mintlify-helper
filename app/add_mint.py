@@ -74,7 +74,7 @@ def process_file(json_file):
 
 def process_reference_files(reference_dir=None):
     """
-    Process all JSON files in the reference folder.
+    Process all JSON files in the reference folder and its subdirectories (pro, demo).
     """
     if reference_dir is None:
         reference_dir = Path(DEFAULT_REFERENCE_DIR)
@@ -87,7 +87,7 @@ def process_reference_files(reference_dir=None):
         )
         return False
 
-    json_files = list(reference_dir.glob("*.json"))
+    json_files = list(reference_dir.rglob("*.json"))
 
     if not json_files:
         justsdk.print_warning("No JSON files found in the reference directory.")
@@ -95,7 +95,8 @@ def process_reference_files(reference_dir=None):
 
     justsdk.print_info(f"Found {len(json_files)} JSON file(s) to process:")
     for file in json_files:
-        print(f"  - {file.name}")
+        relative_path = file.relative_to(reference_dir)
+        print(f"  - {relative_path}")
 
     success_count = 0
 

@@ -26,6 +26,9 @@
         "summary": "Check API server status",
         "description": "This endpoint allows you to **check the API server status**",
         "operationId": "ping-server",
+        "x-mint": {
+          "href": "/reference/ping-server"
+        },
         "responses": {
           "200": {
             "description": "Status OK",
@@ -37,9 +40,6 @@
               }
             }
           }
-        },
-        "x-mint": {
-          "href": "/reference/ping-server"
         }
       }
     },
