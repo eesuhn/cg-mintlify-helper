@@ -108,9 +108,30 @@ def convert_reference_links(content):
     return converted_content
 
 
-def convert_md_to_mdx(content):
+def find_operation_path_and_method(openapi_data, target_operation_id):
     """
-    Convert markdown content to MDX format.
+    Find the path and HTTP method for a given operation ID in OpenAPI data.
+    Returns tuple of (path, method) or (None, None) if not found.
+    """
+    if "paths" not in openapi_data:
+        return None, None
+
+    for path, path_item in openapi_data["paths"].items():
+        for method in HTTP_METHODS:
+            if method in path_item:
+                operation = path_item[method]
+                if (
+                    "operationId" in operation
+                    and operation["operationId"] == target_operation_id
+                ):
+                    return path, method
+
+    return None, None
+
+
+def convert_md_to_mdx(content, openapi_metadata=None):
+    """
+    Convert markdown content to MDX format with optional OpenAPI frontmatter.
     """
     extracted_content = extract_tips_and_notes(content)
 
@@ -119,6 +140,18 @@ def convert_md_to_mdx(content):
 
     converted_content = convert_blockquote_to_component(extracted_content)
     converted_content = convert_reference_links(converted_content)
+
+    if openapi_metadata and all(
+        key in openapi_metadata for key in ["reference_file", "path", "method"]
+    ):
+        reference_file = openapi_metadata["reference_file"]
+        path = openapi_metadata["path"]
+        method = openapi_metadata["method"]
+
+        frontmatter = (
+            f"---\nopenapi: api-reference/{reference_file} {method} {path}\n---\n\n"
+        )
+        converted_content = frontmatter + converted_content
 
     return converted_content
 
@@ -161,7 +194,9 @@ def extract_operation_ids(openapi_data):
     return operation_ids
 
 
-def process_operation_id(operation_id, output_dir):
+def process_operation_id(
+    operation_id, output_dir, json_filename=None, openapi_data=None
+):
     """
     Process a single operation ID: fetch markdown and convert to MDX.
     """
@@ -171,7 +206,18 @@ def process_operation_id(operation_id, output_dir):
         if md_content is None:
             return False
 
-        mdx_content = convert_md_to_mdx(md_content)
+        # Prepare OpenAPI metadata for frontmatter
+        openapi_metadata = None
+        if json_filename and openapi_data:
+            path, method = find_operation_path_and_method(openapi_data, operation_id)
+            if path and method:
+                openapi_metadata = {
+                    "reference_file": f"{json_filename}.json",
+                    "path": path,
+                    "method": method,
+                }
+
+        mdx_content = convert_md_to_mdx(md_content, openapi_metadata)
 
         if not mdx_content.strip():
             justsdk.print_warning(
@@ -210,9 +256,12 @@ def process_file(json_file, output_dir=None):
         justsdk.print_info(f"Found {len(operation_ids)} operation IDs to process")
 
         success_count = 0
+        json_filename = json_file.stem
 
         for operation_id in operation_ids:
-            if process_operation_id(operation_id, output_dir):
+            if process_operation_id(
+                operation_id, output_dir, json_filename, openapi_data
+            ):
                 success_count += 1
 
         justsdk.print_info(
