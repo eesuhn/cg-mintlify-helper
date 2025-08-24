@@ -1,0 +1,19 @@
+---
+openapi: api-reference/coingecko-pro.json get /coins/markets
+---
+
+<Tip>
+### Tips
+- You can retrieve specific coins using their unique `ids`, `names`, or `symbols` instead of returning the whole list.
+- To filter results based on the coin's category, use the `category` param (refer to [`/coins/categories/list`](<https://docs.coingecko.com/reference/coins-categories-list>) for available categories).
+- Use the `per_page` and `page` params to manage the number of results you receive and navigate through the data.
+</Tip>
+
+<Note>
+### Note
+- When multiple lookup params are provided, the following priority order is applied: `category` (highest) > `ids` > `names` > `symbols` (lowest).
+- When searching by `name`, you need to URL-encode any spaces (e.g. "Binance Coin" becomes "Binance%20Coin").
+- The `include_tokens=all` param is exclusively for use with the `symbols` lookup and is limited to maximum of 50 symbols per request.
+- Wildcard searches are not supported for lookup params (`ids`, `names`, `symbols`).
+- Cache/Update Frequency: every 45 seconds for Pro API (Analyst, Lite, Pro, Enterprise).
+</Note>

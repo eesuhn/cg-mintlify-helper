@@ -1,0 +1,14 @@
+---
+openapi: api-reference/coingecko-pro.json get /nfts/{asset_platform_id}/contract/{contract_address}/market_chart
+---
+
+<Note>
+### Note
+- This endpoint doesn't support Solana NFT and Art Blocks, please use [/nfts/\{id}/market\_chart](/reference/nfts-id-market-chart) endpoint instead.
+- Data Granularity (auto):
+  - 1-14 days from now = **5-minutely** data
+  - 15 days & above from now = **daily** data (00:00 UTC)
+- Cache/Update Frequency: every 5 minutes
+- The last completed UTC day (00:00) is available 5 minutes after midnight on the next UTC day (00:05).
+- Exclusive for Paid Plan Subscribers (Analyst, Lite, Pro and Enterprise).
+</Note>

@@ -1,0 +1,19 @@
+---
+openapi: api-reference/onchain-pro.json get /networks/{network}/tokens/{address}
+---
+
+<Tip>
+### Tips
+- You may add values such as `top_pools` in the include param to include top pools along with the pools information.
+- If you would like to query token information such as socials, websites, description and etc. You can go to this endpoint [`/networks/{network}/tokens/{address}/info`](<https://docs.coingecko.com/reference/token-info-contract-address>) instead.
+</Tip>
+
+<Note>
+### Note
+- Address not found in GeckoTerminal.com will be ignored.
+- The endpoint will only return the first top most liquid pool for each token. The top pool is determined through a combination of two key factors: liquidity (`reserve_in_usd`) and 24-Hour Trading Volume (`volume_usd`)
+- If the token's market cap is not verified by the team, the API response will return `null` for its market cap value, even though it has a displayed value on GeckoTerminal, which might not be accurate as it often matches the Fully Diluted Valuation (FDV).
+- Market Cap can be verified by and sourced from CoinGecko, and the number may be higher than FDV as it may include Market Cap of tokens issued on other blockchain network.
+- Attributes specified in the `include` param will be returned under the top-level "included" key.
+- Cache/Update frequency: every 30 seconds.
+</Note>
