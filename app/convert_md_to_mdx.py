@@ -20,20 +20,26 @@ def extract_tips_and_notes(content):
     Extract Tips, Notes, and Notice sections from markdown content.
     """
     patterns = [
-        # Capture Tips section
-        r"(>\s*👍\s*Tips.*?)(?=\n\n>\s*[📘🚧]|\n\n[^>]|\Z)",
-        # Capture Notes section
-        r"(>\s*📘\s*Notes.*?)(?=\n\n>\s*[👍🚧]|\n\n[^>]|\Z)",
         # Capture Notice section
-        r"(>\s*🚧\s*Notice.*?)(?=\n\n>\s*[👍📘]|\n\n[^>]|\Z)",
+        ("notice", r"(>\s*🚧.*?(?:Notice|Warning).*?)(?=\n\n>\s*[👍📘]|\n\n[^>]|\Z)"),
+        # Capture Tips section
+        ("tips", r"(>\s*👍.*?Tips.*?)(?=\n\n>\s*[📘🚧]|\n\n[^>]|\Z)"),
+        # Capture Notes section
+        ("notes", r"(>\s*📘.*?Notes.*?)(?=\n\n>\s*[👍🚧]|\n\n[^>]|\Z)"),
     ]
 
-    all_matches = []
+    # Dictionary to store matches by type
+    matches_by_type = {"notice": [], "tips": [], "notes": []}
 
-    for pattern in patterns:
+    for section_type, pattern in patterns:
         matches = re.findall(pattern, content, flags=re.MULTILINE | re.DOTALL)
         if matches:
-            all_matches.extend(matches)
+            matches_by_type[section_type].extend(matches)
+
+    # Combine matches in the desired order: Notice, Tips, Notes
+    all_matches = []
+    for section_type in ["notice", "tips", "notes"]:
+        all_matches.extend(matches_by_type[section_type])
 
     if not all_matches:
         return ""
@@ -80,11 +86,15 @@ def convert_blockquote_to_component(content):
             # Remove leading > and minimal whitespace
             cleaned_line = re.sub(r"^>\s?", "", line)
 
-            # Skip empty header lines and the title line
             if not content_started:
-                if cleaned_line.strip() == "" or any(
-                    keyword in cleaned_line
-                    for keyword in ["👍 Tips", "📘 Notes", "🚧 Notice", "🚧 Warning"]
+                if (
+                    cleaned_line.strip() == ""
+                    or "👍" in cleaned_line
+                    and "Tips" in cleaned_line
+                    or "📘" in cleaned_line
+                    and "Notes" in cleaned_line
+                    or "🚧" in cleaned_line
+                    and ("Notice" in cleaned_line or "Warning" in cleaned_line)
                 ):
                     continue
                 content_started = True
@@ -110,11 +120,11 @@ def convert_blockquote_to_component(content):
 
         return mdx_component
 
-    # Simple pattern to match each complete section
+    # Process patterns in the desired order: Notice, Tips, Notes
     patterns = [
-        r"(>\s*👍\s*Tips.*?)(?=\n\n>\s*[📘🚧]|\n\n[^>]|\Z)",
-        r"(>\s*📘\s*Notes.*?)(?=\n\n>\s*[👍🚧]|\n\n[^>]|\Z)",
-        r"(>\s*🚧\s*(?:Notice|Warning).*?)(?=\n\n>\s*[👍📘]|\n\n[^>]|\Z)",
+        r"(>\s*🚧.*?(?:Notice|Warning).*?)(?=\n\n>\s*[👍📘]|\n\n[^>]|\Z)",
+        r"(>\s*👍.*?Tips.*?)(?=\n\n>\s*[📘🚧]|\n\n[^>]|\Z)",
+        r"(>\s*📘.*?Notes.*?)(?=\n\n>\s*[👍🚧]|\n\n[^>]|\Z)",
     ]
 
     converted_content = content

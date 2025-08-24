@@ -1,0 +1,15 @@
+---
+openapi: api-reference/onchain-pro.json get /networks/{network}/tokens/{token_address}/holders_chart
+---
+
+<Note>
+### Note
+- The historical token holders chart data is currently in Beta, with ongoing improvements to data quality, coverage, and update frequency.
+- Supported chains include: Solana, EVM (Ethereum, Polygon, BNB, Arbitrum, Optimism, Base), Sui, TON, and Ronin.
+- `days` param provides the following automatic granularity:
+  - `days=7` = **all data** (without fixed intervals)
+  - `days=30` = **daily data** (30 daily intervals)
+  - `days=max` = **weekly data**
+- 💼 Exclusive for Paid Plan subscribers (Analyst plan or above).
+- Cache/Update frequency: every 60 seconds.
+</Note>
