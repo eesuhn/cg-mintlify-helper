@@ -3,15 +3,17 @@ openapi: api-reference/coingecko-pro.json get /exchanges/{id}
 ---
 
 <Warning>
-### Notice
-- Please note that the `trade_volume_24h_btc_normalized` data field will no longer be supported by our API starting on June 16, 2025. Please refer to [changelog](https://docs.coingecko.com/changelog/upcoming-change-notice-removal-of-normalized_volume_btc-data) for more details.
+  ### Notice
+
+  - Please note that the `trade_volume_24h_btc_normalized` data field will no longer be supported by our API starting on June 16, 2025. Please refer to [changelog](https://docs.coingecko.com/changelog/upcoming-change-notice-removal-of-normalized_volume_btc-data) for more details.
 </Warning>
 
 <Note>
-### Note
-- The exchange volume in the response is provided in BTC. To convert it to other currencies, please use [/exchange\_rates](/reference/exchange-rates) endpoint.
-- For derivatives (e.g. `bitmex`, `binance_futures`), to get derivatives exchanges data, please go to [/derivatives/exchange/\{id}](/reference/derivatives-exchanges-id) endpoint.
-- Tickers are limited to 100 items, to get more tickers, please go to [/exchanges/\{id}/tickers](/reference/exchanges-id-tickers) endpoint.
-- When `dex_pair_format=symbol`, the DEX pair `base` and `target` are displayed in symbol format (e.g. `WETH`, `USDC`) instead of as contract addresses.
-- Cache / Update Frequency: every 60 seconds for all the API plans.
+  ### Note
+
+  - The exchange volume in the response is provided in BTC. To convert it to other currencies, please use [/exchange\_rates](/reference/exchange-rates) endpoint.
+  - For derivatives (e.g. `bitmex`, `binance_futures`), to get derivatives exchanges data, please go to [/derivatives/exchange/\{id}](/reference/derivatives-exchanges-id) endpoint.
+  - Tickers are limited to 100 items, to get more tickers, please go to [/exchanges/\{id}/tickers](/reference/exchanges-id-tickers) endpoint.
+  - When `dex_pair_format=symbol`, the DEX pair `base` and `target` are displayed in symbol format (e.g. `WETH`, `USDC`) instead of as contract addresses.
+  - Cache / Update Frequency: every 60 seconds for all the API plans.
 </Note>

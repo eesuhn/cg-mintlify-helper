@@ -3,12 +3,13 @@ openapi: api-reference/coingecko-pro.json get /exchanges/{id}/volume_chart
 ---
 
 <Note>
-### Note
-- You can use this endpoint to query the historical volume chart data of **derivatives exchanges** as well.
-- The exchange volume in the response is provided in BTC. To convert it to other currencies, please use [/exchange\_rates](/reference/exchange-rates) endpoint.
-- Data granularity is automatic (cannot be adjusted):
-  - 1 day = 10-minutely
-  - 7, 14 days = hourly
-  - 30 days & above = daily
-- Cache / Update Frequency: every 60 seconds for all the API plans.
+  ### Note
+
+  - You can use this endpoint to query the historical volume chart data of **derivatives exchanges** as well.
+  - The exchange volume in the response is provided in BTC. To convert it to other currencies, please use [/exchange\_rates](/reference/exchange-rates) endpoint.
+  - Data granularity is automatic (cannot be adjusted):
+    - 1 day = 10-minutely
+    - 7, 14 days = hourly
+    - 30 days & above = daily
+  - Cache / Update Frequency: every 60 seconds for all the API plans.
 </Note>

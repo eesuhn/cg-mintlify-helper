@@ -3,26 +3,29 @@ openapi: api-reference/coingecko-pro.json get /coins/{id}
 ---
 
 <Warning>
-### Notice
-- Please note that the `twitter_followers` data field will no longer be supported by our API starting on May 15, 2025. Please refer to [changelog](https://docs.coingecko.com/changelog/upcoming-change-notice-removal-of-twitter_followers-data) for more details.
+  ### Notice
+
+  - Please note that the `twitter_followers` data field will no longer be supported by our API starting on May 15, 2025. Please refer to [changelog](https://docs.coingecko.com/changelog/upcoming-change-notice-removal-of-twitter_followers-data) for more details.
 </Warning>
 
 <Tip>
-### Tips
-- You may obtain the coin `id` (API ID) via several ways:
-  - refers to respective coin page and find "API ID".
-  - refers to [`/coins/list`](<https://docs.coingecko.com/reference/coins-list>) endpoint.
-  - refers to Google Sheets [here](https://docs.google.com/spreadsheets/d/1wTTuxXt8n9q7C4NDXqQpI3wpKu1_5bGVmP9Xz0XGSyU/edit?usp=sharing).
-- You may also flag to include more data such as tickers, market data, community data, developer data and sparkline.
-- You may refer to `last_updated` in the endpoint response to check whether the price is stale.
+  ### Tips
+
+  - You may obtain the coin `id` (API ID) via several ways:
+    - refers to respective coin page and find "API ID".
+    - refers to [`/coins/list`](<https://docs.coingecko.com/reference/coins-list>) endpoint.
+    - refers to Google Sheets [here](https://docs.google.com/spreadsheets/d/1wTTuxXt8n9q7C4NDXqQpI3wpKu1_5bGVmP9Xz0XGSyU/edit?usp=sharing).
+  - You may also flag to include more data such as tickers, market data, community data, developer data and sparkline.
+  - You may refer to `last_updated` in the endpoint response to check whether the price is stale.
 </Tip>
 
 <Note>
-### Note
-- Tickers are limited to 100 items, to get more tickers, please go to [/coins/\{id}/tickers](/reference/coins-id-tickers).
-- Coin descriptions may include newline characters represented as `\r\n` (escape sequences), which may require processing for proper formatting.
-- When `dex_pair_format=symbol`, the DEX pair `base` and `target` are displayed in symbol format (e.g. `WETH`, `USDC`) instead of as contract addresses.
-- Cache/Update Frequency:
-  - Every 60 seconds for all the API plans.
-  - Community data for Telegram will be updated on weekly basis (Reddit & Twitter community data are no longer supported).
+  ### Note
+
+  - Tickers are limited to 100 items, to get more tickers, please go to [/coins/\{id}/tickers](/reference/coins-id-tickers).
+  - Coin descriptions may include newline characters represented as `\r\n` (escape sequences), which may require processing for proper formatting.
+  - When `dex_pair_format=symbol`, the DEX pair `base` and `target` are displayed in symbol format (e.g. `WETH`, `USDC`) instead of as contract addresses.
+  - Cache/Update Frequency:
+    - Every 60 seconds for all the API plans.
+    - Community data for Telegram will be updated on weekly basis (Reddit & Twitter community data are no longer supported).
 </Note>

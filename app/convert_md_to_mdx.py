@@ -114,9 +114,16 @@ def convert_blockquote_to_component(content):
 
         component_content = "\n".join(cleaned_lines).strip()
 
-        mdx_component = (
-            f"<{component_type}>\n### {title}\n{component_content}\n</{component_type}>"
-        )
+        # Indent the content by 2 spaces for proper MDX formatting
+        indented_lines = []
+        for line in component_content.split("\n"):
+            if line.strip():  # Only indent non-empty lines
+                indented_lines.append("  " + line)
+            else:
+                indented_lines.append(line)
+        indented_content = "\n".join(indented_lines)
+
+        mdx_component = f"<{component_type}>\n  ### {title}\n\n{indented_content}\n</{component_type}>"
 
         return mdx_component
 
