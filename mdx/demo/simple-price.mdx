@@ -1,0 +1,27 @@
+---
+openapi: api-reference/coingecko-demo.json get /simple/price
+---
+
+<Tip>
+  ### Tips
+
+  - You may obtain the coin ID (API ID) via several ways:
+    - refers to respective coin page and find 'API ID'.
+    - refers to [`/coins/list`](<https://docs.coingecko.com/v3.0.1/reference/coins-list>) endpoint.
+    - refers to Google Sheets [here](https://docs.google.com/spreadsheets/d/1wTTuxXt8n9q7C4NDXqQpI3wpKu1_5bGVmP9Xz0XGSyU/edit?usp=sharing).
+  - You can retrieve specific coins using their unique `ids`, `names`, or `symbols`.
+  - You may flag to include more data such as market cap, 24hr volume, 24hr change, last updated time etc.
+  - To verify if a price is stale, you may flag `include_last_updated_at=true` in your request to obtain the latest updated time. Alternatively, you may flag `include_24hr_change=true` to determine if it returns a `null` value.
+</Tip>
+
+<Note>
+  ### Note
+
+  - You may cross-check the price on [CoinGecko](https://www.coingecko.com) and learn more about our price methodology [here](https://www.coingecko.com/en/methodology).
+  - When multiple lookup params are provided, the following priority order is applied: `ids` (highest) > `names` > `symbols` (lowest).
+  - When searching by `name`, you need to URL-encode any spaces (e.g. "Binance Coin" becomes "Binance%20Coin").
+  - The `include_tokens=all` param is exclusively for use with the `symbols` lookup and is limited to maximum of 50 symbols per request.
+  - Wildcard searches are not supported for lookup params (`ids`, `names`, `symbols`).
+  - Cache/Update Frequency: every 60 seconds for Public API.
+    - Every 20 seconds for [Pro-API](https://www.coingecko.com/en/api/pricing) (Analyst, Lite, Pro, Enterprise).
+</Note>

@@ -1,0 +1,15 @@
+---
+openapi: api-reference/onchain-demo.json get /simple/networks/{network}/token_price/{addresses}
+---
+
+<Note>
+  ### Note
+
+  - If the token's market cap is not verified by the team, the API response will return `null` for its market cap value, even though it has a displayed value on GeckoTerminal, which might not be accurate as it often matches the Fully Diluted Valuation (FDV).
+    - If you require `market_cap_usd` to return FDV value (as seen in [GeckoTerminal.com](https://www.geckoterminal.com/)) when market cap data is unavailable, please specify this parameter `mcap_fdv_fallback=true`.
+  - The returned price currency is in USD.
+  - Addresses not found in GeckoTerminal will be ignored.
+  - This endpoint allows querying **up to 30 contract addresses** per request.
+  - When using this endpoint, GeckoTerminal's routing decides the best pool for token price. The price source may change based on liquidity and pool activity. For full control over the price, you may use [`/networks/{network}/pools/{address}`](<https://docs.coingecko.com/v3.0.1/reference/pool-address>) endpoint by providing a specific pool address.
+  - Cache/Update Frequency: every 60 seconds.
+</Note>

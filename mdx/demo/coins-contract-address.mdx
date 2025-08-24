@@ -1,0 +1,24 @@
+---
+openapi: api-reference/coingecko-demo.json get /coins/{id}/contract/{contract_address}
+---
+
+<Warning>
+  ### Notice
+
+  - Please note that the `twitter_followers` data field will no longer be supported by our API starting on May 15, 2025. Please refer to [changelog](https://docs.coingecko.com/changelog/upcoming-change-notice-removal-of-twitter_followers-data) for more details.
+</Warning>
+
+<Tip>
+  ### Tips
+
+  - You may obtain the asset platform and contract address via several ways:
+    - refers to respective coin page and find 'contract address'.
+    - refers to [`/coins/list`](<https://docs.coingecko.com/v3.0.1/reference/coins-list>) endpoint (`include platform = true`).
+</Tip>
+
+<Note>
+  ### Note
+
+  - Coin descriptions may include newline characters represented as `\r\n` (escape sequences), which may require processing for proper formatting.
+  - Cache / Update Frequency: every 60 seconds for all the API plans.
+</Note>

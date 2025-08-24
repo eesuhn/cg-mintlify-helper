@@ -77,13 +77,23 @@ def main():
         process_files_func = add_mint_process_files
     elif args.mode == "convert-mdx":
         justsdk.print_info("Starting OpenAPI markdown to MDX converter...")
-        process_file_func = convert_md_process_file
+
+        def _process_demo_file(file_path, output_dir=None):
+            """Process a single file in demo mode."""
+            return convert_md_process_file(file_path, output_dir, DEMO_MODE)
+
+        def _process_pro_file(file_path, output_dir=None):
+            """Process a single file in pro mode."""
+            return convert_md_process_file(file_path, output_dir, PRO_MODE)
 
         if args.api_mode == DEMO_MODE:
+            process_file_func = _process_demo_file
             process_files_func = process_demo_files
         elif args.api_mode == PRO_MODE:
+            process_file_func = _process_pro_file
             process_files_func = process_pro_files
         else:
+            process_file_func = convert_md_process_file
             process_files_func = convert_md_process_files
     else:
         justsdk.print_error(f"Unknown mode: {args.mode}")

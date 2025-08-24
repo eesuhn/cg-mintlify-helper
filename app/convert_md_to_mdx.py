@@ -7,6 +7,7 @@ from ._constants import (
     HTTP_METHODS,
     DEFAULT_REFERENCE_DIR,
     COINGECKO_DOCS_BASE_URL,
+    COINGECKO_DEMO_DOCS_BASE_URL,
     REQUEST_TIMEOUT,
     DEMO_MODE,
     PRO_MODE,
@@ -147,16 +148,23 @@ def convert_blockquote_to_component(content):
     return converted_content
 
 
-def convert_reference_links(content):
+def convert_reference_links(content, mode=None):
     """
     Convert relative reference links to full CoinGecko documentation URLs.
+    Uses different base URLs for demo and pro modes.
     """
     pattern = r"\[`([^`]+)`\]\(/reference/([^)]+)\)"
 
     def replace_link(match):
         endpoint = match.group(1)
         reference_id = match.group(2)
-        return f"[`{endpoint}`](<https://docs.coingecko.com/reference/{reference_id}>)"
+
+        if mode == DEMO_MODE:
+            base_url = COINGECKO_DEMO_DOCS_BASE_URL
+        else:
+            base_url = COINGECKO_DOCS_BASE_URL
+
+        return f"[`{endpoint}`](<{base_url}/{reference_id}>)"
 
     converted_content = re.sub(pattern, replace_link, content)
 
@@ -184,7 +192,7 @@ def find_operation_path_and_method(openapi_data, target_operation_id):
     return None, None
 
 
-def convert_md_to_mdx(content, openapi_metadata=None):
+def convert_md_to_mdx(content, openapi_metadata=None, mode=None):
     """
     Convert markdown content to MDX format with optional OpenAPI frontmatter.
     """
@@ -194,7 +202,7 @@ def convert_md_to_mdx(content, openapi_metadata=None):
         return ""
 
     converted_content = convert_blockquote_to_component(extracted_content)
-    converted_content = convert_reference_links(converted_content)
+    converted_content = convert_reference_links(converted_content, mode)
 
     if openapi_metadata and all(
         key in openapi_metadata for key in ["reference_file", "path", "method"]
@@ -211,21 +219,29 @@ def convert_md_to_mdx(content, openapi_metadata=None):
     return converted_content
 
 
-def fetch_markdown_content(operation_id):
+def fetch_markdown_content(operation_id, mode=None):
     """
     Fetch markdown content from CoinGecko docs for a given operation ID.
+    Uses different base URLs for demo and pro modes.
     """
-    url = f"{COINGECKO_DOCS_BASE_URL}/{operation_id}.md"
+    if mode == DEMO_MODE:
+        base_url = COINGECKO_DEMO_DOCS_BASE_URL
+    else:
+        base_url = COINGECKO_DOCS_BASE_URL
+
+    url = f"{base_url}/{operation_id}.md"
 
     try:
         response = requests.get(url, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
 
-        justsdk.print_success(f"Fetched markdown content for '{operation_id}'")
+        justsdk.print_success(
+            f"Fetched markdown content for '{operation_id}' from {base_url}"
+        )
         return response.text
 
     except requests.exceptions.RequestException as e:
-        justsdk.print_error(f"Failed to fetch '{operation_id}.md': {e}")
+        justsdk.print_error(f"Failed to fetch '{operation_id}.md' from {base_url}: {e}")
         return None
 
 
@@ -250,13 +266,13 @@ def extract_operation_ids(openapi_data):
 
 
 def process_operation_id(
-    operation_id, output_dir, json_filename=None, openapi_data=None
+    operation_id, output_dir, json_filename=None, openapi_data=None, mode=None
 ):
     """
     Process a single operation ID: fetch markdown and convert to MDX.
     """
     try:
-        md_content = fetch_markdown_content(operation_id)
+        md_content = fetch_markdown_content(operation_id, mode)
 
         if md_content is None:
             return False
@@ -272,7 +288,7 @@ def process_operation_id(
                     "method": method,
                 }
 
-        mdx_content = convert_md_to_mdx(md_content, openapi_metadata)
+        mdx_content = convert_md_to_mdx(md_content, openapi_metadata, mode)
 
         if not mdx_content.strip():
             justsdk.print_debug(
@@ -290,7 +306,7 @@ def process_operation_id(
         return False
 
 
-def process_file(json_file, output_dir=None):
+def process_file(json_file, output_dir=None, mode=None):
     """
     Process a single OpenAPI JSON file to generate MDX files.
     """
@@ -315,7 +331,7 @@ def process_file(json_file, output_dir=None):
 
         for operation_id in operation_ids:
             if process_operation_id(
-                operation_id, output_dir, json_filename, openapi_data
+                operation_id, output_dir, json_filename, openapi_data, mode
             ):
                 success_count += 1
 
@@ -373,7 +389,7 @@ def process_mode_files(mode, reference_dir=None, output_dir=None):
     success_count = 0
 
     for json_file in json_files:
-        if process_file(json_file, mode_output_dir):
+        if process_file(json_file, mode_output_dir, mode):
             success_count += 1
 
     justsdk.print_info(
@@ -396,7 +412,7 @@ def process_pro_files(reference_dir=None, output_dir=None):
     return process_mode_files(PRO_MODE, reference_dir, output_dir)
 
 
-def process_reference_files(reference_dir=None, output_dir=None):
+def process_reference_files(reference_dir=None, output_dir=None, mode=None):
     """
     Process all OpenAPI JSON files in the reference folder to generate MDX files.
     """
@@ -429,7 +445,7 @@ def process_reference_files(reference_dir=None, output_dir=None):
     success_count = 0
 
     for json_file in json_files:
-        if process_file(json_file, output_dir):
+        if process_file(json_file, output_dir, mode):
             success_count += 1
 
     justsdk.print_info(
